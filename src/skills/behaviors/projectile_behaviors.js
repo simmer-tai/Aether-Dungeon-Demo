@@ -257,6 +257,60 @@ export const projectileBehaviors = {
         });
     },
 
+    'crimson_slash_single': (user, game, params) => {
+        // Single slanted slash with Crimson Cross effects (Ring, Particles)
+        let baseRotation = 0;
+        let offsetX = 0;
+        let offsetY = 0;
+        const forward = params.forwardOffset || 40;
+
+        if (user.facing === 'right') { baseRotation = 0; offsetX = forward; }
+        else if (user.facing === 'down') { baseRotation = Math.PI / 2; offsetY = forward; }
+        else if (user.facing === 'left') { baseRotation = Math.PI; offsetX = -forward; }
+        else if (user.facing === 'up') { baseRotation = -Math.PI / 2; offsetY = -forward; }
+        else if (user.facing === 'up-right') { baseRotation = -Math.PI / 4; offsetX = forward * 0.7; offsetY = -forward * 0.7; }
+        else if (user.facing === 'up-left') { baseRotation = -3 * Math.PI / 4; offsetX = -forward * 0.7; offsetY = -forward * 0.7; }
+        else if (user.facing === 'down-right') { baseRotation = Math.PI / 4; offsetX = forward * 0.7; offsetY = forward * 0.7; }
+        else if (user.facing === 'down-left') { baseRotation = 3 * Math.PI / 4; offsetX = -forward * 0.7; offsetY = forward * 0.7; }
+
+        const spawnX = user.x + user.width / 2 + offsetX;
+        const spawnY = user.y + user.height / 2 + offsetY;
+
+        // Use standard rotation matching facing (removed 45 degree slant)
+        const finalRotation = baseRotation;
+
+        // 1. Spawn Slash
+        spawnProjectile(game, spawnX, spawnY, 0, 0, {
+            ...params,
+            rotation: finalRotation,
+            fixedOrientation: true,
+            noShake: true,
+            noHitParticles: true
+        });
+
+        // 2. Shockwave Ring
+        game.animations.push({
+            type: 'ring',
+            x: spawnX, y: spawnY,
+            radius: 10,
+            maxRadius: 80,
+            width: 25,
+            life: 0.25,
+            maxLife: 0.25,
+            color: params.trailColor || params.color
+        });
+
+        // 3. Linear Particle Diffusion along the slash line
+        const span = params.height || 100;
+        for (let i = 0; i < 12; i++) {
+            const pDist = (Math.random() - 0.5) * span;
+            const px = spawnX + Math.cos(finalRotation + Math.PI / 2) * pDist;
+            const py = spawnY + Math.sin(finalRotation + Math.PI / 2) * pDist;
+
+            game.spawnParticles(px, py, 1, params.damageColor || params.color);
+        }
+    },
+
     'lunatic_snicker_strike': (user, game, params) => {
         // Visual Impact: Initial Shake
         game.camera.shake(0.4, 8);

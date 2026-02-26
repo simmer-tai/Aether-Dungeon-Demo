@@ -1,4 +1,4 @@
-import { spawnExplosion, spawnIceShatter, spawnProjectile, spawnAetherExplosion, spawnLightningBolt, spawnLightningBurst, spawnThunderBurstImpact, spawnThunderfallImpact } from '../common.js';
+﻿import { spawnExplosion, spawnIceShatter, spawnProjectile, spawnAetherExplosion, spawnLightningBolt, spawnLightningBurst, spawnThunderBurstImpact, spawnThunderfallImpact } from '../common.js';
 import { getCachedImage } from '../../utils.js';
 
 export const areaBehaviors = {
@@ -122,11 +122,10 @@ export const areaBehaviors = {
     },
 
     'ice_spike': function (user, game, params) {
-        // Base spawn center
-        const startX = user.x + user.width / 2;
-        const startY = user.y + user.height / 2;
-
         // Direction based on Player Facing
+        const startX = user.x + user.width / 2;
+        const startY = user.y + user.height; // Start at feet
+
         let dx = 0;
         let dy = 0;
         // user.facing is 'left', 'right', 'up', 'down'
@@ -177,8 +176,9 @@ export const areaBehaviors = {
                     const i = spawnedCount;
 
                     // Calc Base Position along line
-                    let targetX = startX + (dx * spacing * i);
-                    let targetY = startY + (dy * spacing * i);
+                    // Use (i-1) to start the first spike at the player's feet
+                    let targetX = startX + (dx * spacing * (i - 1));
+                    let targetY = startY + (dy * spacing * (i - 1));
 
                     // Apply Perpendicular Offset
                     const offsetP = (Math.random() * 10) - 5;
@@ -188,7 +188,7 @@ export const areaBehaviors = {
                         targetX += offsetP;
                     }
 
-                    const baseY = targetY + maxH / 2;
+                    const baseY = targetY; // Anchor is at bottom, so baseY is ground level
 
                     // Random Variation
                     const scale = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
@@ -863,85 +863,195 @@ export const areaBehaviors = {
     },
 
     'thunderfall_storm': (user, game, params) => {
-        // Direction based on Player Facing
-        const startX = user.x + user.width / 2;
-        const startY = user.y + user.height / 2;
+        const count = params.count || 12;
+        const interval = params.interval || 0.03;
+        const spacing = params.spacing || 25;
+        const zigzag = params.zigzagWidth || 30;
 
-        let dx = 0;
-        let dy = 0;
-        // user.facing is 'left', 'right', 'up', 'down'
-        if (user.facing === 'left') dx = -1;
-        else if (user.facing === 'right') dx = 1;
-        else if (user.facing === 'up') dy = -1;
-        else if (user.facing === 'down') dy = 1;
-        else if (user.facing === 'up-left') { dx = -0.707; dy = -0.707; }
-        else if (user.facing === 'up-right') { dx = 0.707; dy = -0.707; }
-        else if (user.facing === 'down-left') { dx = -0.707; dy = 0.707; }
-        else if (user.facing === 'down-right') { dx = 0.707; dy = 0.707; }
+        // Directional Logic
+        let dirX = 0, dirY = 0;
+        if (user.facing === 'left') dirX = -1;
+        else if (user.facing === 'right') dirX = 1;
+        else if (user.facing === 'up') dirY = -1;
+        else if (user.facing === 'down') dirY = 1;
+        else if (user.facing === 'up-left') { dirX = -0.707; dirY = -0.707; }
+        else if (user.facing === 'up-right') { dirX = 0.707; dirY = -0.707; }
+        else if (user.facing === 'down-left') { dirX = -0.707; dirY = 0.707; }
+        else if (user.facing === 'down-right') { dirX = 0.707; dirY = 0.707; }
+        else { dirX = 0; dirY = 1; } // Default
 
-        // Fallback if no facing
-        if (dx === 0 && dy === 0) dy = 1;
+        let spawned = 0;
+        let timer = interval;
 
-        const count = params.count || 8; // Number of bolts
-        const spacing = params.spacing || 70; // Distance between bolts
-        const interval = params.interval || 0.08; // Speed of propagation (fast)
-
-        let spawnedCount = 0;
-        let timer = 0;
+        // Start source at player center
+        const cx = user.x + user.width / 2;
+        const cy = user.y + user.height / 2;
 
         game.animations.push({
             type: 'logic',
-            life: count * interval + 1.0,
-            lateralOffset: 0, // Initialize random walk state
-
+            life: (count * interval) + 1.0,
             update: function (dt) {
-                if (spawnedCount >= count) {
+                if (spawned >= count) {
                     this.life = 0;
                     return;
                 }
 
                 timer += dt;
-                while (timer >= interval && spawnedCount < count) {
+                while (timer >= interval && spawned < count) {
                     timer -= interval;
-                    spawnedCount++;
+                    spawned++;
 
-                    const i = spawnedCount; // 1-based index
+                    // progression based on spacing
+                    const dist = spawned * spacing + 40; // Starts slightly ahead
 
-                    // Main Path (Forward)
-                    let targetX = startX + (dx * spacing * i);
-                    let targetY = startY + (dy * spacing * i);
+                    // Perpendicular zigzag offset
+                    const sideOffset = (Math.random() - 0.5) * zigzag;
+                    const tx = cx + (dirX * dist) + (-dirY * sideOffset);
+                    const ty = cy + (dirY * dist) + (dirX * sideOffset);
 
-                    // 1. Bolt from Sky
-                    spawnLightningBolt(game, targetX, targetY, {
-                        height: 600,
-                        segments: 60, // Increased parts
-                        deviation: 40, // Slightly reduced deviation for finer zigzag
-                        thickness: 25, // Reduced size (thickness)
-                        color: '#ffff00'
+                    // Visual lightning strike
+                    spawnLightningBolt(game, tx, ty, {
+                        height: 1200,      // Sky to Ground (Starts well above screen)
+                        segments: 80,      // High density jaggedness (matching volt_drive style)
+                        deviation: 50,
+                        thickness: 55,     // Thicker, more powerful bolt
+                        color: '#ffff00',
+                        life: 0.12         // Quick flash
                     });
+                    spawnThunderfallImpact(game, tx, ty, 1.4); // Even larger impact scale
 
-                    // 2. Impact Effect (Realism)
-                    spawnThunderfallImpact(game, targetX, targetY);
-
-                    // 3. Screen Shake
-                    game.camera.shake(0.2, 8);
-
-                    // 4. Damage Area (Instant)
+                    // Impact Damage
                     const hitRadius = 50;
                     game.enemies.forEach(e => {
                         if (e.markedForDeletion) return;
-                        const ex = e.x + e.width / 2;
-                        const ey = e.y + e.height / 2;
-                        if (Math.hypot(ex - targetX, ey - targetY) < hitRadius) {
-                            e.takeDamage(params.damage, params.damageColor || '#ffff00', params.aetherCharge);
-                            game.spawnParticles(ex, ey, 5, '#ffff00');
+                        const edist = Math.hypot(e.x + e.width / 2 - tx, e.y + e.height / 2 - ty);
+                        if (edist < hitRadius) {
+                            const isCrit = Math.random() < (params.critChance || 0);
+                            const finalDmg = isCrit ? params.damage * (params.critMultiplier || 2.0) : params.damage;
+                            e.takeDamage(finalDmg, params.damageColor || '#ffff00', params.aetherCharge || 0, isCrit);
                         }
                     });
+
+                    if (game.camera) game.camera.shake(0.05, 2);
                 }
             }
         });
     },
 
+    'starfall_storm': (user, game, params) => {
+        const isRush = user.isAetherRush;
+        let duration = params.duration || 8.0;
+        if (isRush && params.rushDuration) {
+            duration = params.rushDuration;
+        }
+        const radius = params.radius || 180;
+
+        let count = params.count || 100;
+        if (isRush) {
+            count = params.rushCount || (count * 2);
+        }
+
+        const interval = duration / count;
+
+        let timer = interval;
+        let elapsed = 0;
+
+        const triggerMeteorImpact = (g, x, y) => {
+            spawnExplosion(g, x, y, '#ff4400', 0.8, params.shakeIntensity || 0.3);
+
+            // Standard Ground Glow (Replaces complex multiple puddles)
+            const pLife = params.puddleLife || 2.5;
+            g.animations.push({
+                type: 'magma_puddle',
+                layer: 'bottom',
+                x: x, y: y,
+                radius: 40,
+                life: pLife, maxLife: pLife,
+                damage: params.puddleDamage || 8,
+                slow: 0.5,
+                hitEnemies: new Map(),
+                update: function (dt2) {
+                    this.life -= dt2;
+                    g.enemies.forEach(e => {
+                        const dx = (e.x + e.width / 2) - this.x;
+                        const dy = (e.y + e.height / 2) - this.y;
+                        if (Math.hypot(dx, dy) < this.radius) {
+                            e.tempSlow = 0.2;
+                            e.slowMultiplier = this.slow;
+                            let tick = this.hitEnemies.get(e) || 0;
+                            if (tick <= 0) {
+                                e.takeDamage(this.damage, '#ff4400', 0.1);
+                                this.hitEnemies.set(e, 0.5);
+                            } else {
+                                this.hitEnemies.set(e, tick - dt2);
+                            }
+                        }
+                    });
+                },
+                draw: function (ctx) {
+                    ctx.save();
+                    const alpha = Math.min(1, this.life / 0.5);
+                    ctx.globalAlpha = alpha * 0.5;
+                    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                    grad.addColorStop(0, '#ff4400');
+                    grad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                }
+            });
+        };
+
+        game.animations.push({
+            type: 'logic',
+            life: duration,
+            update: function (dt) {
+                elapsed += dt;
+                timer += dt;
+                const px = user.x + user.width / 2;
+                const py = user.y + user.height / 2;
+                while (timer >= interval && elapsed < duration) {
+                    timer -= interval;
+
+                    const perStrike = params.perStrike || 1;
+                    for (let i = 0; i < perStrike; i++) {
+                        const ang = Math.random() * Math.PI * 2;
+                        const d = Math.sqrt(Math.random()) * radius;
+                        const tx = px + Math.cos(ang) * d;
+                        const ty = py + Math.sin(ang) * d;
+
+                        const rockIdx = Math.floor(Math.random() * 3) + 1;
+                        const sprite = "assets/meteor_rock" + rockIdx + ".png";
+                        const speed = params.starSpeed || 1500;
+                        const offset = 600;
+                        const sx = tx + 200;
+                        const sy = ty - offset;
+
+                        const distTotal = Math.sqrt(200 * 200 + offset * offset);
+                        const lifeNeeded = distTotal / speed;
+
+                        spawnProjectile(game, sx, sy, (tx - sx) / lifeNeeded, (ty - sy) / lifeNeeded, {
+                            ...params,
+                            spriteSheet: sprite,
+                            life: lifeNeeded,
+                            noTrail: false, // Re-enabled standard trail
+                            trailColor: '#ffbb44',
+                            ignoreWallDestruction: true,
+                            width: 48, height: 48,
+                            spinning: true,
+                            spinSpeed: (Math.random() - 0.5) * 12, // Random rotation speed and direction
+                            hasAura: true, // Fire aura
+                            rotation: Math.random() * Math.PI * 2,
+                            fixedOrientation: false,
+                            onDestroy: (g) => {
+                                triggerMeteorImpact(g, tx, ty);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    },
     'global_strike': (user, game, params) => {
         // 1. Initial Blast at user location
         const initialShakePower = 8;
@@ -1153,11 +1263,90 @@ export const areaBehaviors = {
             type: 'logic',
             life: duration,
             hitEnemies: new Set(),
+            puddleTimer: 0,
+            puddleInterval: params.puddleInterval || 0.02,
             update: function (dt) {
                 this.life -= dt;
                 user.vx = dx * speed;
                 user.vy = dy * speed;
                 user.keepVelocity = true;
+
+                // Trail Eruptions
+                this.puddleTimer -= dt;
+                if (this.puddleTimer <= 0) {
+                    this.puddleTimer = this.puddleInterval;
+
+                    const pDamage = params.puddleDamage || 5;
+                    const pLife = params.puddleLife || 3.0;
+                    const px = user.x + user.width / 2;
+                    const py = user.y + user.height; // At feet
+
+                    game.animations.push({
+                        type: 'magma_puddle',
+                        layer: 'bottom',
+                        x: px,
+                        y: py,
+                        radius: 20,
+                        life: pLife,
+                        maxLife: pLife,
+                        damage: pDamage,
+                        slow: 0.5,
+                        hitEnemies: new Map(),
+                        randSeed: Math.random() * 100,
+                        randHeight: 0.8 + Math.random() * 0.4,
+                        randSpeed: 0.9 + Math.random() * 0.2,
+                        update: function (dt2) {
+                            this.life -= dt2;
+                            if (Math.random() < 0.5) {
+                                const isSmoke = Math.random() < 0.3;
+                                game.spawnParticles(
+                                    this.x + (Math.random() - 0.5) * this.radius * 0.4,
+                                    this.y,
+                                    1,
+                                    isSmoke ? '#333333' : (Math.random() < 0.5 ? '#ff4400' : '#ffbb00'),
+                                    (Math.random() - 0.5) * 12,
+                                    -60 - Math.random() * 60,
+                                    { shape: 'circle', shrink: true, size: 6 + Math.random() * 4 }
+                                );
+                            }
+                            game.enemies.forEach(e2 => {
+                                const ex2 = (e2.x + e2.width / 2) - this.x;
+                                const ey2 = (e2.y + e2.height / 2) - this.y;
+                                if (Math.hypot(ex2, ey2) < this.radius) { e2.tempSlow = 0.2; e2.slowMultiplier = this.slow; let tickTimer = this.hitEnemies.get(e2) || 0; tickTimer -= dt2; if (tickTimer <= 0) { e2.takeDamage(this.damage, '#ff4400', params.puddleAetherCharge || 0.1); this.hitEnemies.set(e2, 0.4); game.spawnParticles(e2.x + e2.width / 2, e2.y + e2.height / 2, 2, '#ff4400'); } else { this.hitEnemies.set(e2, tickTimer); } }
+                            });
+                        },
+                        draw: function (ctx) {
+                            ctx.save();
+                            const alpha = Math.min(1, this.life / 0.5);
+                            ctx.globalAlpha = alpha * 0.8;
+                            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                            grad.addColorStop(0, '#ff4400'); grad.addColorStop(1, 'rgba(255, 68, 0, 0)');
+                            ctx.fillStyle = grad;
+                            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+                            const surfaceGrad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                            surfaceGrad.addColorStop(0, 'rgba(255, 68, 0, 0.8)'); surfaceGrad.addColorStop(0.6, 'rgba(255, 68, 0, 0.3)'); surfaceGrad.addColorStop(1, 'rgba(255, 68, 0, 0)');
+                            ctx.fillStyle = surfaceGrad;
+                            ctx.beginPath(); ctx.ellipse(this.x, this.y, this.radius, this.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+                            const t = (this.maxLife - this.life) * 10 * this.randSpeed + this.randSeed;
+                            const emberCount = 14;
+                            for (let i = 0; i < emberCount; i++) {
+                                const offset = (i / emberCount) * Math.PI * 2;
+                                const progress = (t * 0.15 + offset) % 1.0;
+                                const spreadX = Math.sin(this.randSeed + i * 2) * (this.radius * 0.25);
+                                const exP = this.x + spreadX * progress;
+                                const eyP = this.y - (this.radius * 1.2 * progress * this.randHeight);
+                                const eSize = (6 + Math.random() * 4) * (1 - progress * 0.7);
+                                let color; if (progress < 0.4) color = i % 3 === 0 ? '#ffffff' : (i % 3 === 1 ? '#ffff00' : '#ff4400'); else if (progress < 0.7) color = '#662200'; else color = '#111111';
+                                ctx.globalAlpha = alpha * (1 - progress); ctx.fillStyle = color;
+                                ctx.beginPath(); ctx.arc(exP, eyP, eSize, 0, Math.PI * 2); ctx.fill();
+                            }
+                            const coreGrad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 0.5);
+                            coreGrad.addColorStop(0, '#ffff00'); coreGrad.addColorStop(1, 'rgba(255, 187, 0, 0)');
+                            ctx.fillStyle = coreGrad; ctx.beginPath(); ctx.ellipse(this.x, this.y, this.radius * 0.4, this.radius * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+                            ctx.restore();
+                        }
+                    });
+                }
                 user.isCasting = true;
 
                 // --- Beautiful Trail Effect ---
@@ -1616,7 +1805,7 @@ export const areaBehaviors = {
 
         // Aether Rush Extension
         if (user.isAetherRush) {
-            user.voltDriveTimer *= 1.5;
+            user.voltDriveTimer *= 2.0;
         }
 
         // 2. Global Visual Activation (YELLOW)
@@ -1666,7 +1855,7 @@ export const areaBehaviors = {
                 }
 
                 lightningTimer += dt;
-                const interval = user.isAetherRush ? (params.autoLightningInterval * 0.7) : params.autoLightningInterval;
+                const interval = user.isAetherRush ? (params.autoLightningInterval * 0.5) : params.autoLightningInterval;
                 if (lightningTimer >= interval) {
                     lightningTimer = 0;
 
@@ -1721,13 +1910,21 @@ export const areaBehaviors = {
                             const finalDmg = isCrit ? damage * (params.critMultiplier || 2.0) : damage;
 
                             nearest.takeDamage(finalDmg, params.damageColor || '#ffff00', 0, isCrit);
+
+                            const bCount = user.isAetherRush ? 8 : 4;
+                            const bSize = user.isAetherRush ? 60 : 30;
                             spawnLightningBurst(game, nearest.x + nearest.width / 2, nearest.y + nearest.height / 2, {
-                                burstCount: 4, burstSize: 30, burstSpeed: 100
+                                burstCount: bCount, burstSize: bSize, burstSpeed: 100
                             });
+
+                            if (user.isAetherRush) {
+                                // Extra visual impact for Aether Rush
+                                spawnThunderBurstImpact(game, tx, ty);
+                            }
 
                             // --- Multi-jump Chain Logic ---
                             const baseChain = params.chainCount || 3;
-                            let chainCount = user.isAetherRush ? (baseChain + 2) : baseChain;
+                            let chainCount = user.isAetherRush ? (baseChain + 4) : baseChain;
                             let hitIds = new Set([nearest.id]);
 
                             const triggerJump = (fromEnemy, remaining) => {

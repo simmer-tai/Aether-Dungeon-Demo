@@ -66,8 +66,9 @@ export class Map {
             this.rooms.push(startRoom);
             this.placeStartNeighborRooms(startRoom); // Guarantee 4-way corridors + rooms
 
-            // 1. Critical Rooms - Staircase
+            // 1. Critical Rooms
             let staircasePlaced = this.placer.placeRoom({ w: 6, h: 6, type: 'staircase', entranceCount: 1 });
+            let shopPlaced = this.placer.placeRoom({ w: 8, h: 8, type: 'shop', entranceCount: 1 });
 
             // 2. Random Rooms
             const targetRooms = 20;
@@ -100,7 +101,7 @@ export class Map {
             // Staircase already placed
             this.placer.placeRoom({ w: 6, h: 6, type: 'statue', entranceCount: 1 });
             this.placer.placeRoom({ w: 6, h: 6, type: 'altar', entranceCount: 1 });
-            this.placer.placeRoom({ w: 8, h: 8, type: 'shop', entranceCount: 1 });
+            // Shop already placed in critical phase
 
             // 4. Connectivity
             this.connector.connectRooms();
@@ -114,7 +115,7 @@ export class Map {
             // 5. Convert dead-end normal rooms into extra treasure rooms
             // (Removed as per user request to make dead-ends combat rooms)
 
-            if (connectivityResult.success && staircasePlaced) success = true;
+            if (connectivityResult.success && staircasePlaced && shopPlaced) success = true;
 
             if (attempts >= maxAttempts && !success) {
                 console.error("Dungeon generation failed to ensure connectivity or staircase placement.");
@@ -254,6 +255,33 @@ export class Map {
         };
 
         // Use the placer logic to ensure consistency
+        this.placer.carveRoom(room);
+        this.rooms.push(room);
+    }
+
+    generateTitleBackground() {
+        this.width = 30;
+        this.height = 25;
+        this.tiles = [];
+        this.roomGrid = [];
+        for (let y = 0; y < this.height; y++) {
+            this.tiles[y] = [];
+            this.roomGrid[y] = [];
+            for (let x = 0; x < this.width; x++) {
+                this.tiles[y][x] = 1;
+                this.roomGrid[y][x] = -1;
+            }
+        }
+        this.rooms = [];
+        const room = {
+            x: 5, y: 5, w: 20, h: 15,
+            type: 'start',
+            id: 0,
+            cleared: true,
+            active: true,
+            connectors: [],
+            shape: 'square'
+        };
         this.placer.carveRoom(room);
         this.rooms.push(room);
     }

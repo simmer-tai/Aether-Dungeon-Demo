@@ -1,5 +1,6 @@
 import { Entity, getCachedImage } from './utils.js';
 import { SkillType, spawnAetherExplosion } from './skills/index.js';
+import { SaveManager } from './SaveManager.js';
 
 export class Player extends Entity {
     constructor(game, x, y) {
@@ -143,6 +144,7 @@ export class Player extends Entity {
         }
 
         this.inventory.push(skill);
+        SaveManager.unlockSkill(skill.id);
         console.log(`Acquired new skill: ${skill.name}`);
         return true;
     }
@@ -167,6 +169,15 @@ export class Player extends Entity {
     }
 
     update(dt) {
+        if (this.isDemo) {
+            this.frameTimer += dt;
+            if (this.frameTimer > this.frameInterval) {
+                this.frameX++;
+                if (this.frameX >= this.maxFrames) this.frameX = 0;
+                this.frameTimer = 0;
+            }
+            return;
+        }
         if (!this.keepVelocity) {
             this.vx = 0;
             this.vy = 0;

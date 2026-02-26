@@ -32,13 +32,32 @@
 
         <!-- Title Screen -->
         <div id="title-screen">
+            <video id="title-video" autoplay loop muted playsinline>
+                <source src="assets/title_bg.mp4" type="video/mp4">
+            </video>
             <div class="title-container">
                 <h1 class="game-title">Aether Dungeon</h1>
                 <p class="game-subtitle">~ エーテル・ダンジョン ~</p>
-                <button id="btn-start-game" class="title-btn">冒険を始める</button>
+                <div class="title-menu">
+                    <button id="btn-start-game" class="title-btn">冒険を始める</button>
+                    <button id="btn-open-collection" class="title-btn secondary">図鑑を見る</button>
+                </div>
             </div>
             <div class="title-footer">
                 v1.2.0 | &copy; 2024 Aether Team
+            </div>
+        </div>
+
+        <!-- Collection Modal -->
+        <div id="collection-modal" style="display: none;">
+            <div class="collection-container">
+                <h2 class="collection-title">開発済みスキル書庫</h2>
+                <div id="collection-grid" class="collection-grid">
+                    <!-- Items injected by JS -->
+                </div>
+                <div class="collection-footer">
+                    <button id="btn-close-collection" class="title-btn secondary" style="width: 200px;">閉じる</button>
+                </div>
             </div>
         </div>
 
@@ -120,18 +139,6 @@
             </div>
         </div>
 
-        <!-- Shop Modal -->
-        <div id="shop-modal" style="display: none;">
-            <div class="shop-modal-container">
-                <div class="shop-modal-header">
-                    <span class="shop-modal-title">🏪 商人の店</span>
-                    <button id="shop-close-btn" class="shop-close-btn">✕ 閉じる</button>
-                </div>
-                <div id="shop-cards" class="shop-cards-row">
-                    <!-- Cards injected by JS -->
-                </div>
-            </div>
-        </div>
         <div id="skill-bar">
             <div class="skill-slot" id="skill-normal">
                 <div class="key-hint">Space</div>

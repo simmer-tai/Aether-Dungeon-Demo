@@ -42,6 +42,22 @@ export class Enemy extends Entity {
     }
 
     update(dt) {
+        if (this.isDemo) {
+            if (this.isSpawning) {
+                this.spawnTimer -= dt;
+                if (this.spawnTimer <= 0) {
+                    this.isSpawning = false;
+                    this.spawnTimer = 0;
+                }
+            }
+            this.frameTimer += dt;
+            if (this.frameTimer > (this.frameInterval || 0.1)) {
+                this.frameX++;
+                if (this.frameX >= (this.maxFrames || 4)) this.frameX = 0;
+                this.frameTimer = 0;
+            }
+            return;
+        }
         // Handle Spawning state
         if (this.isSpawning) {
             this.spawnTimer -= dt;
@@ -279,6 +295,8 @@ export class Enemy extends Entity {
             this.markedForDeletion = true;
             this.game.spawnDeathEffect(this);
 
+            if (this.isDemo) return; // No drops in demo
+
             // Spawn Currency Drops
             const dropCount = Math.floor(Math.random() * 3) + 1; // 1 to 3 shards
             for (let i = 0; i < dropCount; i++) {
@@ -293,7 +311,8 @@ export class Enemy extends Entity {
             ctx.save();
 
             // Draw Spawn Shadow/Shadow Puddle
-            const spawnProgress = this.isSpawning ? (1 - (this.spawnTimer / this.spawnDuration)) : 1.0;
+            let spawnProgress = this.isSpawning ? (1 - (this.spawnTimer / this.spawnDuration)) : 1.0;
+            spawnProgress = Math.max(0, Math.min(1.0, spawnProgress));
             const shadowAlpha = 0.3 * spawnProgress;
             ctx.save();
             ctx.translate(this.x + this.width / 2, this.y + this.height);

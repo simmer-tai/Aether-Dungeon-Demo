@@ -155,7 +155,7 @@ export class SkeletonArcher extends Enemy {
     }
 
     draw(ctx) {
-        if (!this.walkData || this.walkFrames.length === 0) {
+        if (!this.walkData || this.walkFrames.length === 0 || !this.fullSheet.complete || this.fullSheet.naturalWidth === 0) {
             super.draw(ctx);
             return;
         }

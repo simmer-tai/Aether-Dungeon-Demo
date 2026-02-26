@@ -70,6 +70,8 @@ export const spawnProjectile = (game, x, y, vx, vy, params) => {
         trailColor: params.trailColor,
         critChance: params.critChance || 0,
         critMultiplier: params.critMultiplier || 2.0,
+        spinSpeed: params.spinSpeed || 0,
+        hasAura: params.hasAura || false,
         update: function (dt) {
             // Adaptive Aspect Ratio (User request: use image ratio)
             if (this.image && this.image.complete && !this._ratioApplied && params.fixedOrientation) {
@@ -102,9 +104,29 @@ export const spawnProjectile = (game, x, y, vx, vy, params) => {
                 }
             }
 
-            // Random Rotation Logic
-            if (params.randomRotation) {
+            // Custom Rotation / Spinning
+            if (this.spinSpeed) {
+                this.rotation += this.spinSpeed * dt;
+            } else if (params.randomRotation) {
                 this.rotation = Math.random() * Math.PI * 2;
+            }
+
+            // Aura Effect (Fire Particles around the projectile)
+            if (this.hasAura && Math.random() < 0.5) {
+                game.animations.push({
+                    type: 'particle',
+                    x: this.x + Math.random() * this.w,
+                    y: this.y + Math.random() * this.h,
+                    w: 4 + Math.random() * 6,
+                    h: 4 + Math.random() * 6,
+                    life: 0.3 + Math.random() * 0.3,
+                    maxLife: 0.6,
+                    color: '#ff6600',
+                    vx: (Math.random() - 0.5) * 40,
+                    vy: (Math.random() - 0.5) * 40,
+                    alpha: 0.8,
+                    shape: 'circle'
+                });
             }
 
             // General Trail

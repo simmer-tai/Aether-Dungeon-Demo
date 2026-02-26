@@ -99,7 +99,7 @@ export class Goblin extends Enemy {
             ctx.globalAlpha = spawnProgress;
         }
 
-        if (frameRect && currentImg.complete) {
+        if (frameRect && currentImg.complete && currentImg.naturalWidth !== 0) {
             ctx.save();
             if (this.flashTimer > 0) {
                 ctx.filter = 'brightness(0) invert(1)';
@@ -120,7 +120,7 @@ export class Goblin extends Enemy {
                 -this.width / 2, -this.height, this.width, this.height
             );
             ctx.restore();
-        } else if (currentImg.complete) {
+        } else if (currentImg.complete && currentImg.naturalWidth !== 0) {
             // Fallback to base drawing for single images
             ctx.save();
             const faceLeft = this.game.player.x < this.x;

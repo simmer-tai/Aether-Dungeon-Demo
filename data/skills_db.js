@@ -34,27 +34,28 @@ export const skillsDB = [
     },
     {
         id: 'slash',
-        // name: 'スラッシュ', // Slash
-        name: 'Slash (Backup)',
+        name: 'スラッシュ', // Restore original name if needed, or keep backup if user preferred
         type: 'normal',
         icon: 'assets/icon_slash.png',
-        cooldown: 0.4,
-        behavior: 'static_slash',
-        description: '前方に飛ぶ斬撃を放つ。',
+        cooldown: 0.5,
+        behavior: 'crimson_slash_single',
+        description: '前方に鋭い斬撃を放つ。クリティカル率が非常に高い。',
         params: {
-            damage: 15,
-            speed: 0, // Stationary
-            life: 0.1, // Duration of animation (Tripled speed)
-            width: 14,
-            height: 48,
-            forwardOffset: 30,
+            damage: 7,
+            speed: 0,
+            life: 0.12, // Reduced from 0.2 for faster animation
+            width: 120, // Crimson Cross scale
+            height: 120,
+            forwardOffset: 35,
             shape: 'slash',
-            color: 'rgba(255, 255, 255, 1.0)', // Pure White
-            trailColor: 'rgba(220, 255, 255, 0.6)', // Wind trail
-            damageColor: '#ffffff', // White (Wind)
-            aetherCharge: 2.0, // Calculated: 5.0 / (1 hit / 0.4s)
-            critChance: 0.15,      // 15% - 斬撃はクリ率高め
-            critMultiplier: 2.0
+            color: 'rgba(255, 255, 255, 1.0)', // Pure White (Slash theme)
+            trailColor: 'rgba(220, 255, 255, 0.6)',
+            damageColor: '#ffffff',
+            pierce: 999,
+            ignoreWallDestruction: true,
+            aetherCharge: 2.0,
+            critChance: 0.30,
+            critMultiplier: 1.5
         }
     },
     {
@@ -325,17 +326,17 @@ export const skillsDB = [
         // actually, let's use a placeholder or the sprite sheet as icon if logic allows, but usually icon is separate.
         // For now, null is fine or we can reuse `icon_ice.png` if it exists (from ice_signal).
         // icon: 'assets/icon_ice_spike.png', // Placeholder name
-        cooldown: 6.0,
+        cooldown: 7.0,
         behavior: 'ice_spike',
         description: '前方に氷の棘を突き上げる。5秒間持続し、上にいる敵にダメージを与え続ける。',
         params: {
             damage: 3, // Initial Hit
-            duration: 1.0,
+            duration: 5.0,
             tickInterval: 0.5,
             count: 30, // Increased count to 30
-            spacing: 5, // Reduced spacing for density (was 8)
-            width: 10, // 15 * 0.7
-            height: 46, // 66 * 0.7
+            spacing: 30, // Much wider spacing per user request
+            width: 20, // 10 * 2
+            height: 92, // 46 * 2
             spriteSheet: 'assets/ice_spike.png',
             frames: 1,
             damageColor: '#00ffff', // Cyan (Ice)
@@ -520,8 +521,11 @@ export const skillsDB = [
         params: {
             speed: 1200,
             duration: 0.4,
-            damage: 15,
+            damage: 25,
             aetherCharge: 2.0,
+            puddleInterval: 0.01,
+            puddleDamage: 5,
+            puddleLife: 3.0,
             spriteSheet: 'assets/phoenix_aura.png',
             spriteData: 'assets/phoenix_aura.json',
             frames: 4
@@ -565,7 +569,7 @@ export const skillsDB = [
         description: '自身の周囲を回転する２つのマグマの核を生成する。核が敵に触れるとその足元に激しい噴火を引き起こし、周囲を焼き尽くす。',
         params: {
             damage: 7,
-            duration: 8.0,
+            duration: 12.0,
             orbitRadius: 80,
             coreRadius: 18,
             rotationSpeed: 7.0,
@@ -591,11 +595,11 @@ export const skillsDB = [
         behavior: 'volt_drive',
         description: '一定時間、雷光と化して戦場を疾駆する奥義。移動速度が大幅に上昇し、ダッシュで敵を貫き、周囲に自動で雷撃を放つ。',
         params: {
-            duration: 8.0,
-            speedMult: 1.8,
-            autoLightningInterval: 0.4,
-            damage: 10,
-            dashDamage: 25,
+            duration: 6.0,
+            speedMult: 1.5,
+            autoLightningInterval: 0.6,
+            damage: 8,
+            dashDamage: 15,
             chainCount: 3,
             chainRange: 150,
             damageColor: '#ffff00',
@@ -604,5 +608,41 @@ export const skillsDB = [
             critMultiplier: 2.0
         },
         aetherRushDesc: '効果時間が12秒に延長され、自動雷撃の間隔が短縮、さらに回避の無敵時間が延長される。'
+    },
+    {
+        id: 'starfall',
+        name: 'スターフォール',
+        type: 'ultimate',
+        icon: 'assets/icon_starfall.png',
+        cooldown: 20.0,
+        behavior: 'starfall_storm',
+        description: '広範囲に巨大な隕石を大量に降らせる奥義。着弾地点で大爆発と噴火を引き起こす。',
+        params: {
+            damage: 10, // Significantly reduced due to high burst density
+            duration: 1.0,
+            rushDuration: 1.7,
+            radius: 180,
+            count: 10,
+            rushCount: 17,
+            perStrike: 3,
+            starSpeed: 1000,
+            starLife: 0.6,
+            statusEffect: 'burn',
+            statusChance: 0.8,
+            spriteSheet: 'assets/meteor_rock.png', // User will generate this (Rock only)
+            width: 48,
+            height: 96,
+            color: '#ff4400',
+            trailColor: 'rgba(255, 68, 0, 0.6)',
+            damageColor: '#ff8800',
+            aetherCharge: 10.0,
+            critChance: 0.2,
+            critMultiplier: 1.5,
+            puddleDamage: 4,
+            puddleLife: 4.0,
+            puddleAetherCharge: 1.0,
+            shakeIntensity: 0.3
+        },
+        aetherRushDesc: '隕石の落下速度が上がり、着弾時の噴火数と持続時間が大幅に強化される。'
     }
 ];

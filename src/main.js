@@ -7,6 +7,8 @@ import { drawUI, showSkillSelection, hideSkillSelection, showBlessingSelection, 
 import { initInventory, renderInventory, resetInventorySelection } from './inventory.js';
 import { skillsDB } from '../data/skills_db.js';
 
+import { CollectionUI } from './ui/CollectionUI.js';
+
 const _debugLog = (msg) => {
     // console.log(msg);
     // User requested to remove on-screen log
@@ -38,8 +40,6 @@ class Game {
         this.transitionType = 'none'; // 'fade-out', 'fade-in'
         this.transitionTimer = 0;
         this.transitionDuration = 0.5; // 0.5s fade
-        this.transitionTimer = 0;
-        this.transitionDuration = 0.5; // 0.5s fade
         this.transitionAlpha = 0;
 
         // Time Scale (Slow Motion)
@@ -50,6 +50,9 @@ class Game {
         this.slowMotionStartScale = 1.0;
 
         this.input = new InputHandler();
+        this.lastTime = performance.now();
+        this.accumulator = 0;
+        this.step = 1 / 60;
 
         // Global Click Handler for UI Overlay (Removed Canvas-based Reward Click)
         this.canvas.addEventListener('mousedown', (e) => {
@@ -57,8 +60,7 @@ class Game {
         });
 
         try {
-            // Initial setup but don't spawn player yet
-            // (Unless we want title screen to show the map in background)
+            // Initial setup for title screen
             this.prepareTitleScreen();
         } catch (e) {
             _debugLog("Init Error: " + e.message);
@@ -70,14 +72,8 @@ class Game {
         // Expose game instance for UI access
         window._gameInstance = this;
 
-        // Shop close button
-        const shopCloseBtn = document.getElementById('shop-close-btn');
-        if (shopCloseBtn) {
-            shopCloseBtn.addEventListener('click', () => {
-                import('./ui.js').then(ui => ui.hideShopUI());
-                this.gameState = 'PLAYING';
-            });
-        }
+        // Shop close button removal - handled by deleting the DOM element in index.html,
+        // but removing the listener setup here for clean up.
 
         // Responsive Resizing
         window.addEventListener('resize', () => this.handleResize());
@@ -127,18 +123,42 @@ class Game {
         console.log(`Resized to fit 16:9: ${this.width.toFixed(0)}x${this.height.toFixed(0)}, Zoom: ${this.zoom.toFixed(2)}`);
     }
 
+
     prepareTitleScreen() {
         // Hide UI Layer during title
         const uiLayer = document.getElementById('ui-layer');
         if (uiLayer) {
             uiLayer.style.display = 'none';
         }
+
+        // --- Demo Background Setup ---
+        // Cleanup artifacts: No more live demo generation
+        this.enemies = [];
+        this.projectiles = [];
+        this.animations = [];
+        this.chests = [];
+        this.statues = [];
+        this.bloodAltars = [];
+        this.shopNPCs = [];
+        this.traps = [];
+        this.enemyProjectiles = [];
+        this.entities = [];
     }
 
     initTitleListeners() {
         const startBtn = document.getElementById('btn-start-game');
         if (startBtn) {
             startBtn.onclick = () => this.startGame();
+        }
+
+        const openCollectionBtn = document.getElementById('btn-open-collection');
+        if (openCollectionBtn) {
+            openCollectionBtn.onclick = () => CollectionUI.open();
+        }
+
+        const closeCollectionBtn = document.getElementById('btn-close-collection');
+        if (closeCollectionBtn) {
+            closeCollectionBtn.onclick = () => CollectionUI.close();
         }
     }
 
@@ -238,22 +258,27 @@ class Game {
         const promises = assets.map(src => {
             return new Promise((resolve) => {
                 const img = getCachedImage(src);
-                if (img.complete && img.naturalWidth !== 0) {
+                // Check if already loaded or failed (complete is true in both cases if it has a source)
+                // We check naturalWidth to see if it actually loaded successfully, but in both cases 
+                // if .complete is true, the listeners won't fire again.
+                if (img.complete) {
                     loadedCount++;
                     this.updateLoadingProgress((loadedCount / total) * 100);
                     resolve();
-                } else {
-                    img.onload = () => {
-                        loadedCount++;
-                        this.updateLoadingProgress((loadedCount / total) * 100);
-                        resolve();
-                    };
-                    img.onerror = () => {
-                        console.error("Asset preload failed:", src);
-                        loadedCount++; // Still resolve to avoid hanging
-                        resolve();
-                    };
+                    return;
                 }
+
+                img.onload = () => {
+                    loadedCount++;
+                    this.updateLoadingProgress((loadedCount / total) * 100);
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.error("Asset preload failed:", src);
+                    loadedCount++; // Still resolve to avoid hanging
+                    this.updateLoadingProgress((loadedCount / total) * 100);
+                    resolve();
+                };
             });
         });
 
@@ -429,7 +454,7 @@ class Game {
 
         }
 
-        this.lastTime = 0;
+        this.lastTime = performance.now();
         this.accumulator = 0;
         this.step = 1 / 60;
 
@@ -702,7 +727,9 @@ class Game {
     }
 
     update(dt) {
-        if (this.gameState === 'TITLE') return;
+        if (this.gameState === 'TITLE') {
+            return;
+        }
         // --- Transition Logic ---
         if (this.isTransitioning) {
             this.transitionTimer += dt;
@@ -824,10 +851,6 @@ class Game {
             return;
         }
 
-        // Shop Pause
-        if (this.gameState === 'SHOP') {
-            return;
-        }
 
         if (this.showInventory || this.isPaused) return; // Pause game when inventory or modal is open
 
@@ -918,7 +941,16 @@ class Game {
                                 this.map.isWall(ex, ey + monster.eh) ||
                                 this.map.isWall(ex + monster.ew, ey + monster.eh);
 
-                            if (!hitsWall) {
+                            // Check collision with existing solid entities (Crates, etc.)
+                            const hitsEntity = this.enemies.some(other => {
+                                return other.isSolid &&
+                                    ex < other.x + other.width &&
+                                    ex + monster.ew > other.x &&
+                                    ey < other.y + other.height &&
+                                    ey + monster.eh > other.y;
+                            });
+
+                            if (!hitsWall && !hitsEntity) {
                                 validSpawn = true;
                             }
                         }
@@ -1421,11 +1453,12 @@ class Game {
 
     draw() {
         if (this.gameState === 'TITLE') {
-            // Draw title background or just clear
-            this.ctx.fillStyle = '#0d0d0d';
+            // Standard clear
+            this.ctx.fillStyle = '#0a0a0a';
             this.ctx.fillRect(0, 0, this.width, this.height);
             return;
         }
+
         // Clear screen
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.width, this.height);

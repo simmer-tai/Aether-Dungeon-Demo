@@ -166,7 +166,7 @@ function drawMiniMap(ctx, game, screenWidth, screenHeight) {
     const player = game.player;
 
     // Mini-map configuration
-    const mapSize = 200; // Max width/height in pixels
+    const mapSize = 140; // Max width/height in pixels (reduced 30% from 200)
     const timerSize = 4; // Tile size in pixels (if fitted)
 
     // Calculate scale to fit in mapSize
@@ -561,80 +561,4 @@ function updateAetherGauge(current, max) {
     }
 }
 
-// --- Shop UI ---
-const RARITY_BADGE = {
-    common: { label: 'コモン', color: '#aaaaaa' },
-    rare: { label: 'レア', color: '#4488ff' },
-    epic: { label: 'エピック', color: '#cc44ff' }
-};
-
-export function showShopUI(items, onBuyCallback, onCloseCallback) {
-    const modal = document.getElementById('shop-modal');
-    const cardsEl = document.getElementById('shop-cards');
-    if (!modal || !cardsEl) return;
-
-    const game = window._gameInstance;
-    const currency = game ? game.player.currency : 0;
-
-    cardsEl.innerHTML = '';
-
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'shop-card' + (item.sold ? ' shop-card-sold' : '');
-
-        // Rarity badge
-        const badge = document.createElement('div');
-        badge.className = 'shop-rarity-badge';
-        const r = RARITY_BADGE[item.rarity] || RARITY_BADGE.common;
-        badge.textContent = r.label;
-        badge.style.background = r.color;
-        card.appendChild(badge);
-
-        // Name
-        const name = document.createElement('div');
-        name.className = 'shop-item-name';
-        name.textContent = item.name;
-        card.appendChild(name);
-
-        // Description
-        const desc = document.createElement('div');
-        desc.className = 'shop-item-desc';
-        desc.textContent = item.description || '';
-        card.appendChild(desc);
-
-        // Price
-        const priceRow = document.createElement('div');
-        priceRow.className = 'shop-price-row';
-        priceRow.innerHTML = `<span class="shop-price-icon">◈</span><span class="shop-price-value">${item.price}</span>`;
-        card.appendChild(priceRow);
-
-        // Buy button
-        const btn = document.createElement('button');
-        btn.className = 'shop-buy-btn';
-        if (item.sold) {
-            btn.textContent = '売り切れ';
-            btn.disabled = true;
-            btn.classList.add('shop-buy-btn-disabled');
-        } else if (currency < item.price) {
-            btn.textContent = 'シャード不足';
-            btn.disabled = true;
-            btn.classList.add('shop-buy-btn-disabled');
-        } else {
-            btn.textContent = '購入';
-            btn.addEventListener('click', () => {
-                if (onBuyCallback) onBuyCallback(item);
-            });
-        }
-        card.appendChild(btn);
-
-        cardsEl.appendChild(card);
-    });
-
-    modal.style.display = 'flex';
-}
-
-export function hideShopUI() {
-    const modal = document.getElementById('shop-modal');
-    if (modal) modal.style.display = 'none';
-}
 
