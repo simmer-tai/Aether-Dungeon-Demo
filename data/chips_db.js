@@ -7,7 +7,7 @@ export const chipsDB = [
         id: 'power_strike',
         name: '猛攻',
         category: '技巧',
-        description: 'スキルダメージを増加させる。',
+        description: 'スキルダメージ',
         baseCost: 4,
         ranks: [
             { level: 1, value: 0.05, cost: 4 },
@@ -22,7 +22,7 @@ export const chipsDB = [
         id: 'life_spark',
         name: '命の灯火',
         category: '耐久',
-        description: '最大HPを増加させる。',
+        description: '最大HP',
         baseCost: 3,
         ranks: [
             { level: 1, value: 5, cost: 3 },
@@ -37,7 +37,7 @@ export const chipsDB = [
         id: 'swift_step',
         name: '迅速',
         category: '俊敏',
-        description: '移動速度を増加させる。',
+        description: '移動速度',
         baseCost: 2,
         ranks: [
             { level: 1, value: 0.03, cost: 2 },

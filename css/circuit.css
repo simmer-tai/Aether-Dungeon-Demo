@@ -302,3 +302,16 @@
     font-size: 8px;
     /* Slightly smaller for smaller slot */
 }
+
+/* Stat Effects Colors */
+.stat-plus {
+    color: #2ecc71;
+    /* Green */
+    font-weight: bold;
+}
+
+.stat-minus {
+    color: #e74c3c;
+    /* Red */
+    font-weight: bold;
+}

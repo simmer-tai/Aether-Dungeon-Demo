@@ -890,6 +890,23 @@ export function showStageSettings(game, skills, onStartCallback, onBackCallback)
                 '俊敏': 'cat-agility'
             }[selectedChip.data.category] || '';
 
+            const getFormattedEffect = (chip) => {
+                const value = chip.getCurrentEffect();
+                const type = chip.data.effectType;
+                let text = '';
+                const isPositive = value > 0;
+
+                if (type.endsWith('_mult')) {
+                    const percent = Math.round(value * 100);
+                    text = `${isPositive ? '+' : ''}${percent}%`;
+                } else {
+                    text = `${isPositive ? '+' : ''}${value}`;
+                }
+
+                const colorClass = isPositive ? 'stat-plus' : 'stat-minus';
+                return `<span class="${colorClass}">${text}</span>`;
+            };
+
             detailPanelEl.innerHTML = `
                 <div class="detail-header">
                     <div class="chip-category ${catClass}">${selectedChip.data.category}</div>
@@ -899,13 +916,15 @@ export function showStageSettings(game, skills, onStartCallback, onBackCallback)
                 <div class="chip-rank-dots">
                     ${Array.from({ length: 5 }).map((_, i) => `<span class="dot ${i < selectedChip.level ? 'filled' : ''}"></span>`).join('')}
                 </div>
-                <div class="detail-description">${selectedChip.data.description}</div>
-                <div class="detail-footer">
+                <div class="detail-description">
+                    ${selectedChip.data.description}${getFormattedEffect(selectedChip)}
+                </div>
+               <div class="detail-footer">
                     <button class="detail-action-btn ${isEquipped ? 'unequip' : ''}">
                         ${isEquipped ? '解除' : '装着'}
                     </button>
                 </div>
-           `;
+          `;
 
             detailPanelEl.querySelector('.detail-action-btn').onclick = () => {
                 if (isEquipped) {
