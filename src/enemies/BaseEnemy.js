@@ -359,6 +359,22 @@ export class Enemy extends Entity {
                     this.game.entities.push(chipDrop);
                 }
             }
+
+            // --- Aether Shard/Fragment Drop Logic ---
+            let shardChance = 0.1; // Base 10%
+            const scoreVal = this.game.scoreManager ? this.game.scoreManager.getScoreValue(this.type) : 50;
+            if (scoreVal >= 500) shardChance = 0.3; // Boss 30%
+            else if (scoreVal >= 100) shardChance = 0.2; // Mid 20%
+
+            if (Math.random() < shardChance) {
+                const shardDrop = new DropItem(this.game, this.x + this.width / 2, this.y + this.height / 2, 1, 'shards');
+                this.game.entities.push(shardDrop);
+            }
+
+            if (Math.random() < 0.05) { // 5% chance for Fragment
+                const fragmentDrop = new DropItem(this.game, this.x + this.width / 2, this.y + this.height / 2, 1, 'fragments');
+                this.game.entities.push(fragmentDrop);
+            }
         }
     }
 

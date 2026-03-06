@@ -38,7 +38,7 @@ export class DropItem extends Entity {
             this.color = colors[rarity] || '#ffffff';
         } else {
             this.image = getCachedImage('assets/ui/aether_shard.png');
-            this.color = '#ffd700';
+            this.color = '#00aaff';
         }
 
         // Magnet

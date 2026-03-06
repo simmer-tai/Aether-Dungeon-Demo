@@ -1111,6 +1111,11 @@ class Game {
         if (this.player.markedForDeletion) {
             if (!this.isGameOver) {
                 this.isGameOver = true;
+                // Save Aether shards and fragments on Game Over
+                if (this.player.saveAetherData) {
+                    console.log("[Game] Saving Aether data upon Game Over...");
+                    this.player.saveAetherData();
+                }
                 // Update local high score
                 const isNewRecord = SaveManager.updateHighScore(this.score);
                 if (isNewRecord) {

@@ -268,14 +268,14 @@ export class Player extends Entity {
             finalAmount = Math.ceil(amount * 0.5);
         }
         this.aetherShards += finalAmount;
-        console.log(`[Player] Shards added: ${finalAmount} (Total: ${this.aetherShards})`);
-        this.saveAetherData();
+        console.log(`[Player] Shards added: ${finalAmount} (Total in session: ${this.aetherShards})`);
+        // saveAetherData removed to delay persistence until Game Over
     }
 
     addAetherFragments(amount) {
         this.aetherFragments += amount;
-        console.log(`[Player] Fragments added: ${amount} (Total: ${this.aetherFragments})`);
-        this.saveAetherData();
+        console.log(`[Player] Fragments added: ${amount} (Total in session: ${this.aetherFragments})`);
+        // saveAetherData removed to delay persistence until Game Over
     }
 
     saveAetherData() {
