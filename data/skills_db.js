@@ -182,8 +182,8 @@ export const skillsDB = [
             // Charge Params
             chargeable: true,
             chargeTime: 0.5,
-            minDamage: 10, // Uncharged
-            maxDamage: 50, // Fully Charged
+            minDamage: 20, // Uncharged
+            maxDamage: 35, // Fully Charged
             minSize: 48, // Uncharged (Small)
             maxSize: 128, // Fully Charged (Large) (64*2)
             maxSpeed: 700,

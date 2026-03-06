@@ -9,7 +9,7 @@ export class AetherCircuitManager {
         this.player = player;
         this.slots = new Array(6).fill(null); // 6 slots for chips
         this.ownedChips = []; // All chips in collection
-        this.maxCapacity = 20; // Initial capacity
+        this.maxCapacity = 50; // Initial capacity (increased from 20)
     }
 
     /**
@@ -17,7 +17,7 @@ export class AetherCircuitManager {
      */
     updateCapacity() {
         // Implementation could depend on player level or specific upgrades
-        this.maxCapacity = 20 + (this.player.currentFloor * 2);
+        this.maxCapacity = 50 + (this.player.currentFloor * 2);
     }
 
     get usedCapacity() {
