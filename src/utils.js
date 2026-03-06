@@ -35,6 +35,7 @@ export class InputHandler {
                 this.mouseY = e.clientY;
             }
         });
+        window.addEventListener('contextmenu', (e) => e.preventDefault());
     }
     isDown(key) { return this.keys[key]; }
     isPressed(key) { return this.pressed[key]; }
