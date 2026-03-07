@@ -32,8 +32,9 @@ export class CollectionUI {
                     <div class="collection-item-rarity" data-type="${skill.type}">${skill.type}</div>
                 `;
 
-                // Add hover for details?
-                item.title = skill.description;
+                // Add hover for details
+                item.addEventListener('mouseover', () => this.updateDetails(skill));
+                item.addEventListener('mouseout', () => this.clearDetails());
             } else {
                 item.innerHTML = `
                     <div class="collection-icon-wrapper locked">
@@ -46,6 +47,59 @@ export class CollectionUI {
 
             gridContainer.appendChild(item);
         });
+    }
+
+    /**
+     * Updates the detail panel with skill information.
+     * @param {Object} skill 
+     */
+    static updateDetails(skill) {
+        const details = document.getElementById('collection-details');
+        if (!details) return;
+
+        const p = skill.params || {};
+        const damage = p.damage || 0;
+        const cooldown = skill.cooldown || 0;
+        const crit = Math.round((p.critChance || 0) * 100);
+        const critMult = p.critMultiplier || 1.0;
+        const status = p.statusEffect ? `${p.statusEffect} (${Math.round((p.statusChance || 0) * 100)}%)` : '-';
+
+        details.innerHTML = `
+            <div class="details-content">
+                <div class="details-main-row">
+                    <span class="details-name">${skill.name}</span>
+                    <span class="details-desc" style="font-size: 11px; color: #ccc;">${skill.description}</span>
+                </div>
+                <div class="collection-stats-row">
+                    <div class="c-stat-item">
+                        <span class="c-stat-label">威力:</span>
+                        <span class="c-stat-value">${damage}</span>
+                    </div>
+                    <div class="c-stat-item">
+                        <span class="c-stat-label">待機:</span>
+                        <span class="c-stat-value">${cooldown}s</span>
+                    </div>
+                    <div class="c-stat-item">
+                        <span class="c-stat-label">会心:</span>
+                        <span class="c-stat-value">${crit}% (x${critMult})</span>
+                    </div>
+                    <div class="c-stat-item">
+                        <span class="c-stat-label">効果:</span>
+                        <span class="c-stat-value">${status}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Clears the detail panel.
+     */
+    static clearDetails() {
+        const details = document.getElementById('collection-details');
+        if (details) {
+            details.innerHTML = '<div class="details-hint">スキルにカーソルを合わせて詳細を表示</div>';
+        }
     }
 
     /**
